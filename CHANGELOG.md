@@ -7,6 +7,13 @@ Entries reference the issue that motivated them.
 
 ## [Unreleased]
 
+### Added
+
+- The New Workspace Directory field has a Browse control that opens a
+  remote-directory browser sheet. It starts at the Host's home directory,
+  lists one level of subdirectories at a time with a filter, and writes the
+  picked directory into the field without starting anything. (#280)
+
 ## [0.1.8] - 2026-09-13
 
 ### Added
@@ -100,7 +107,6 @@ Entries reference the issue that motivated them.
   and light haptic feedback when tapped. Agent controls put Backspace at the
   top right and Shift+Tab at the bottom left. The Direct Input shortcut row
   no longer duplicates the Terminal keyboard's Ctrl/Alt buttons. (PR #302)
-
 ### Fixed
 
 - Switching Agents keeps the Terminal tools keyboard selected instead of opening
