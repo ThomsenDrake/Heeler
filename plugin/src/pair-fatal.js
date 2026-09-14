@@ -4,6 +4,9 @@
 export const MISSING_STATE_DIR =
   "HERDR_PLUGIN_STATE_DIR is not set. Run this popup through herdr.";
 
+export const MISSING_CONFIG_DIR =
+  "HERDR_PLUGIN_CONFIG_DIR is not set. Run this popup through herdr.";
+
 export const MISSING_HOST_KEY = [
   "No SSH host key found under /etc/ssh.",
   "",
