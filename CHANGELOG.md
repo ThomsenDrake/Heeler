@@ -33,7 +33,15 @@ Entries reference the issue that motivated them.
   `HEELER_SSH_HOST_KEY` environment override names the host key path directly
   when the configuration cannot be read, and pairing fails with guidance
   instead of pinning an unverifiable key.
->>>>>>> e92bece (fix(plugin): pin the sshd-configured host key, not the /etc/ssh default)
+- The pairing popup accepts custom addresses — DNS names or IP literals that no
+  local interface carries, such as Tailscale MagicDNS, split-DNS, or ordinary
+  hostnames. Press `n` in the checklist to add one; it is saved to
+  `pairing.json` in the plugin config directory (surviving plugin updates),
+  leads the candidate list pre-checked, and rides in the Pairing Code like any
+  interface address, with the pinned host key still enforced on every address
+  the app tries. Entries are validated (non-empty, no whitespace, at most 253
+  characters), deduplicated case-insensitively, capped at 16, and can also be
+  written by hand in the same file.
 
 ## [0.1.8] - 2026-09-13
 

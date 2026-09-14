@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   MISSING_ADDRESS,
+  MISSING_CONFIG_DIR,
   MISSING_HOST_KEY,
   MISSING_STATE_DIR,
   fatalLines,
@@ -32,6 +33,10 @@ suite("startup copy", () => {
     assert.equal(
       MISSING_STATE_DIR,
       "HERDR_PLUGIN_STATE_DIR is not set. Run this popup through herdr.",
+    );
+    assert.equal(
+      MISSING_CONFIG_DIR,
+      "HERDR_PLUGIN_CONFIG_DIR is not set. Run this popup through herdr.",
     );
     assert.equal(
       MISSING_ADDRESS,
