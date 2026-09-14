@@ -104,6 +104,27 @@ Key's fingerprint and label; press `r` there to revoke that key (removing its
 
 Known limitation: the advertised SSH port is currently fixed at 22.
 
+### Host key discovery
+
+The Pairing Code pins the fingerprint of the host key the local sshd actually
+presents, so it is discovered rather than assumed:
+
+1. `HEELER_SSH_HOST_KEY`, when set, is the host key path (private key or
+   `.pub` file); its `.pub` sibling must be readable.
+2. Otherwise every `HostKey` declared by the effective sshd configuration
+   (`/etc/ssh/sshd_config` plus its `Include`s, `/etc/ssh/sshd_config.d/*`
+   drop-ins) is read in declaration order.
+3. When the configuration declares no `HostKey` at all, the conventional
+   `/etc/ssh/ssh_host_*_key.pub` layout is used, preferring ed25519.
+
+Only public halves (`.pub` files) are ever read. When sshd serves keys from a
+nonstandard directory whose `.pub` files are not readable, pairing refuses to
+start rather than pin a possibly wrong `/etc/ssh` key — set
+`HEELER_SSH_HOST_KEY` in the shell profile that runs herdr (the popup prints
+this hint) and retry. The plugin cannot ask `sshd -T` for the effective
+configuration: unprivileged, it refuses to print a config whose host keys it
+cannot load.
+
 ## Pairing Code envelope (v1)
 
 The Pairing Code is a single-line string; the QR image is just its rendering.

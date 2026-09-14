@@ -23,6 +23,17 @@ Entries reference the issue that motivated them.
 - Show the directory browser on the first New Workspace tap. (PR #305)
 - Viewing a Done Agent marks it seen on its Host and refreshes Console and
   Live Activity status, including other Agents in the same Tab. (#314)
+- The pairing plugin now pins the fingerprint of the host key the local sshd
+  actually presents. It reads `HostKey` directives from the effective sshd
+  configuration (`/etc/ssh/sshd_config` and its `Include`s) instead of assuming
+  `/etc/ssh`, so servers configured like `HostKey
+  /opt/sunk/etc/ssh/ssh_host_ed25519_key` no longer mint Pairing Codes pinned to
+  a stale decoy key — the mismatch Heeler then correctly rejected. Machines
+  with the conventional `/etc/ssh` layout keep working unchanged; a
+  `HEELER_SSH_HOST_KEY` environment override names the host key path directly
+  when the configuration cannot be read, and pairing fails with guidance
+  instead of pinning an unverifiable key.
+>>>>>>> e92bece (fix(plugin): pin the sshd-configured host key, not the /etc/ssh default)
 
 ## [0.1.8] - 2026-09-13
 
