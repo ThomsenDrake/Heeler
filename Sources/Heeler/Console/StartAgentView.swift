@@ -315,7 +315,7 @@ struct StartWorkspacePicker: View {
                         .foregroundStyle(Color.primary)
                     Spacer(minLength: 12)
                     Text(selectedTitle)
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(Color.secondary)
                         .multilineTextAlignment(.trailing)
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.caption.weight(.semibold))
