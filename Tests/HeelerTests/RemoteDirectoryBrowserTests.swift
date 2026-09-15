@@ -96,6 +96,50 @@ struct RemoteDirectoryBrowserTests {
         #expect(browser.visibleDirectories == ["alpha", "beta"])
     }
 
+    @Test func successfulNavigationClearsThePreviousFoldersFilter() async throws {
+        let fake = FakeLister()
+        fake.listings = [
+            "/home/you": RemoteDirectoryListing(directories: ["src"], truncated: false),
+            "/home/you/src": RemoteDirectoryListing(directories: ["app"], truncated: false),
+        ]
+        let browser = makeBrowser(fake)
+        browser.start()
+        try await waitUntil("home loaded") { browser.currentPath == "/home/you" }
+        browser.filter = "src"
+        browser.enter("src")
+        try await waitUntil("child loaded") { browser.currentPath == "/home/you/src" }
+        #expect(browser.filter.isEmpty)
+        #expect(browser.visibleDirectories == ["app"])
+        browser.filter = "app"
+        browser.goBack()
+        try await waitUntil("parent loaded") { browser.currentPath == "/home/you" }
+        #expect(browser.filter.isEmpty)
+        #expect(browser.visibleDirectories == ["src"])
+    }
+
+    @Test func retryReopensTheFailedChildAndKeepsFilterUntilSuccess() async throws {
+        let fake = FakeLister()
+        fake.listings = [
+            "/home/you": RemoteDirectoryListing(directories: ["src"], truncated: false),
+            "/home/you/src": RemoteDirectoryListing(directories: ["app"], truncated: false),
+        ]
+        let browser = makeBrowser(fake)
+        browser.start()
+        try await waitUntil("home loaded") { browser.currentPath == "/home/you" }
+        browser.filter = "src"
+        fake.error = TransportError.invalidDirectoryPath(path: "/home/you/src")
+        browser.enter("src")
+        try await waitUntil("error displayed") { browser.errorMessage != nil }
+        #expect(browser.currentPath == "/home/you")
+        #expect(browser.filter == "src")
+        fake.error = nil
+        browser.retry()
+        try await waitUntil("retry loaded child") { browser.currentPath == "/home/you/src" }
+        #expect(browser.filter.isEmpty)
+        #expect(browser.errorMessage == nil)
+        #expect(fake.calls == ["/home/you", "/home/you/src", "/home/you/src"])
+    }
+
     @Test func truncationFlagTracksEachListing() async throws {
         let fake = FakeLister()
         fake.listings = [

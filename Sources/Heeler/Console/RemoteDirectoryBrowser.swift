@@ -4,9 +4,8 @@ import Observation
 /// The New Workspace remote-directory browser's model (#280): starting at
 /// the remote home directory, it lists one absolute path's subdirectories at
 /// a time over injected closures, so the sheet stays off the SSH types and
-/// tests can script a fake lister. The Directory text field is untouched
-/// until the user picks Use This Directory; a failed listing keeps the prior
-/// path on screen with an error instead of clearing anything.
+/// tests can script a fake lister. Selecting a folder updates the Workspace
+/// draft; a failed listing keeps the prior path and filter on screen.
 @MainActor
 @Observable
 final class RemoteDirectoryBrowser: Identifiable {
@@ -28,6 +27,7 @@ final class RemoteDirectoryBrowser: Identifiable {
     private let resolveHome: ResolveHome
     private let list: ListDirectories
     private var loadTask: Task<Void, Never>?
+    private var requestedPath: String?
 
     init(resolveHome: @escaping ResolveHome, list: @escaping ListDirectories) {
         self.resolveHome = resolveHome
@@ -48,11 +48,14 @@ final class RemoteDirectoryBrowser: Identifiable {
         return Self.parentPath(of: currentPath) != nil
     }
 
-    /// Resolves the remote home and loads it. A home-probe failure surfaces
-    /// the error's own presentation with no path, leaving the Directory
-    /// field as the fallback.
+    /// Resolves the remote home and loads it.
     func start() {
         load(path: nil)
+    }
+
+    /// Retries the failed destination instead of sending the user home.
+    func retry() {
+        load(path: requestedPath)
     }
 
     /// Enters one of the current listing's subdirectories.
@@ -93,6 +96,8 @@ final class RemoteDirectoryBrowser: Identifiable {
 
     private func load(path: String?) {
         loadTask?.cancel()
+        requestedPath = path
+        errorMessage = nil
         isLoading = true
         loadTask = Task { [weak self] in
             guard let self else { return }
@@ -107,6 +112,9 @@ final class RemoteDirectoryBrowser: Identifiable {
                 let listing = try await self.list(target)
                 try Task.checkCancellation()
                 guard !Task.isCancelled else { return }
+                if self.currentPath != target {
+                    self.filter = ""
+                }
                 self.currentPath = target
                 self.directories = listing.directories
                 self.truncated = listing.truncated
@@ -117,8 +125,7 @@ final class RemoteDirectoryBrowser: Identifiable {
                 self.isLoading = false
             } catch {
                 guard !Task.isCancelled else { return }
-                // The prior path and listing stay on screen; only the error
-                // is new, and the Directory field is never touched here.
+                // Keep the prior path, listing and filter until navigation succeeds.
                 self.errorMessage = Self.message(for: error)
                 self.isLoading = false
             }

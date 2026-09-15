@@ -13,6 +13,11 @@ Entries reference the issue that motivated them.
   New Agent. New Workspace opens a remote directory browser. The latest directory stays at the
   bottom of the dropdown, with its name and full path shown when selected. (PR #305)
 
+### Changed
+
+- Make the remote directory browser more compact, with full-row folder navigation,
+  native filtering, empty states, and retry for failed navigation. (PR #305)
+
 ### Fixed
 
 - Show the directory browser on the first New Workspace tap. (PR #305)
