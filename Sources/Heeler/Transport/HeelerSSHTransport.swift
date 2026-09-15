@@ -789,6 +789,13 @@ actor HeelerSSHTransport: Transport {
             decoding: OkResponse.self)
     }
 
+    func focusAgent(_ target: AgentTarget) async throws {
+        _ = try await request(
+            method: "agent.focus",
+            params: target,
+            decoding: AgentInfoResponse.self)
+    }
+
     func renameAgent(_ params: AgentRenameParams) async throws {
         _ = try await request(
             method: "agent.rename",

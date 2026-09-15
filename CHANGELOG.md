@@ -21,6 +21,8 @@ Entries reference the issue that motivated them.
 ### Fixed
 
 - Show the directory browser on the first New Workspace tap. (PR #305)
+- Viewing a Done Agent marks it seen on its Host and refreshes Console and
+  Live Activity status, including other Agents in the same Tab. (#314)
 
 ## [0.1.8] - 2026-09-13
 
