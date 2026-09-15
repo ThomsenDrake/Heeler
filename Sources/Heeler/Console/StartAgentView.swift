@@ -315,9 +315,11 @@ struct StartWorkspacePicker: View {
                         .foregroundStyle(Color.primary)
                     Spacer(minLength: 12)
                     Text(selectedTitle)
+                        .foregroundStyle(Color.primary)
                         .multilineTextAlignment(.trailing)
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.secondary)
                         .accessibilityHidden(true)
                 }
                 if isNewWorkspaceSelected, let newDirectory {
