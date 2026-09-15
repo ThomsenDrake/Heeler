@@ -289,53 +289,50 @@ struct StartWorkspacePicker: View {
     }
 
     var body: some View {
-        Group {
-            Menu {
-                Picker("Workspace", selection: selection) {
-                    if selectedWorkspaceID == nil && !isNewWorkspaceSelected {
-                        Text("None reported").tag(Selection?.none)
-                    }
-                    ForEach(workspaces) { workspace in
-                        Text(workspace.label).tag(Selection?.some(.existing(workspace.id)))
-                    }
-                    if newDirectory != nil {
-                        Text(directoryName).tag(Selection?.some(.newWorkspace))
-                    }
+        Menu {
+            Picker("Workspace", selection: selection) {
+                if selectedWorkspaceID == nil && !isNewWorkspaceSelected {
+                    Text("None reported").tag(Selection?.none)
                 }
-            } label: {
-                VStack(alignment: .trailing, spacing: 4) {
-                    HStack(spacing: 12) {
-                        Text("Workspace")
-                            .foregroundStyle(Color.primary)
-                        Spacer(minLength: 12)
-                        Text(selectedTitle)
-                            .multilineTextAlignment(.trailing)
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.caption.weight(.semibold))
-                            .accessibilityHidden(true)
-                    }
-                    if isNewWorkspaceSelected, let newDirectory {
-                        Text(newDirectory)
-                            .font(.caption)
-                            .foregroundStyle(Color.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .multilineTextAlignment(.trailing)
-                    }
+                ForEach(workspaces) { workspace in
+                    Text(workspace.label).tag(Selection?.some(.existing(workspace.id)))
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .contentShape(Rectangle())
+                if newDirectory != nil {
+                    Text(directoryName).tag(Selection?.some(.newWorkspace))
+                }
             }
-            .menuOrder(.fixed)
-            .disabled(!canBrowse || (workspaces.isEmpty && newDirectory == nil))
-            .accessibilityIdentifier("start-workspace-picker")
+            .disabled(workspaces.isEmpty && newDirectory == nil)
 
+            Divider()
             Button(action: onNewWorkspace) {
                 Label("New Workspace", systemImage: "folder.badge.plus")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
             }
-            .disabled(!canBrowse)
             .accessibilityIdentifier("new-workspace")
+        } label: {
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 12) {
+                    Text("Workspace")
+                        .foregroundStyle(Color.primary)
+                    Spacer(minLength: 12)
+                    Text(selectedTitle)
+                        .multilineTextAlignment(.trailing)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
+                }
+                if isNewWorkspaceSelected, let newDirectory {
+                    Text(newDirectory)
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .contentShape(Rectangle())
         }
+        .menuOrder(.fixed)
+        .disabled(!canBrowse)
+        .accessibilityIdentifier("start-workspace-picker")
     }
 }

@@ -2,7 +2,7 @@
 """Check the real New Agent sheet's first directory browser presentation using idb.
 
 Install the candidate with `make sim-id`, then open a fresh New Agent form,
-select a Host, and keep the New Workspace button visible without opening it.
+select a Host, and keep the Workspace dropdown visible without opening it.
 Run `make test-directory-browser-ui SIMULATOR_UDID=<uuid>`.
 
 The precondition matters: reopening an already-used form can hide a stale
@@ -59,7 +59,24 @@ def main() -> int:
         time.sleep(0.2)
         elements = snapshot()
 
-    matches = [item for item in elements if item.get("AXUniqueId") == "new-workspace"]
+    pickers = [item for item in elements if item.get("AXUniqueId") == "start-workspace-picker"]
+    if len(pickers) != 1 or not pickers[0].get("enabled"):
+        raise RuntimeError("Exactly one enabled Workspace dropdown must be visible")
+    frame = pickers[0]["frame"]
+    ui("tap", str(round(frame["x"] + frame["width"] / 2)),
+       str(round(frame["y"] + frame["height"] / 2)))
+
+    deadline = time.monotonic() + 5
+    matches = []
+    while time.monotonic() < deadline:
+        elements = snapshot()
+        matches = [item for item in elements
+                   if item.get("AXUniqueId") == "new-workspace"
+                   or (item.get("AXLabel") == "New Workspace" and item.get("type") == "Button")]
+        if matches:
+            break
+        time.sleep(0.2)
+    (args.output_dir / "workspace-menu.json").write_text(json.dumps(elements, indent=2) + "\n")
     if len(matches) != 1 or not matches[0].get("enabled"):
         raise RuntimeError("Exactly one enabled New Workspace control must be visible")
     frame = matches[0]["frame"]
