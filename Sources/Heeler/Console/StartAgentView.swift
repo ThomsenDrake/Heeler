@@ -73,66 +73,16 @@ struct StartAgentView: View {
                         }
                     }
 
-                    Section {
-                        if store.offersNewWorkspace {
-                            Picker("Launch", selection: $store.launchTarget) {
-                                Text("Existing Workspace").tag(
-                                    StartAgentStore.LaunchTarget.existingWorkspace)
-                                Text("New Workspace").tag(
-                                    StartAgentStore.LaunchTarget.newWorkspace)
-                            }
-                        }
-                        if store.launchTarget != .newWorkspace {
-                            Picker("Workspace", selection: $store.selectedWorkspaceID) {
-                                if store.workspaces.isEmpty {
-                                    Text("None reported").tag(String?.none)
-                                }
-                                ForEach(store.workspaces) { workspace in
-                                    Text(workspace.label).tag(String?.some(workspace.id))
-                                }
-                            }
-                            .disabled(store.selectedHostID == nil || store.workspaces.isEmpty)
-                        }
-                    } header: {
-                        Text("Workspace")
-                    } footer: {
-                        if store.launchTarget == .newWorkspace {
-                            Text("The Host does not need to report an existing Workspace.")
-                        } else {
-                            Text(
-                                "Where the agent runs. Defaults to the one you last started an agent in."
-                            )
-                        }
-                    }
-
-                    if store.launchTarget == .newWorkspace {
-                        Section {
-                            TextField("e.g. /home/you/src/app", text: $store.newWorkspaceDirectory)
-                                .font(.callout.monospaced())
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                            Button("Browse…") {
-                                guard let hostID = store.selectedHostID else { return }
-                                directoryBrowser = RemoteDirectoryBrowser(
-                                    resolveHome: { try await console.remoteHomeDirectory(on: hostID) },
-                                    list: { try await console.listRemoteDirectories(at: $0, on: hostID) })
-                            }
-                            .disabled(store.selectedHostID == nil)
-                        } header: {
-                            Text("Directory")
-                        } footer: {
-                            Text("Remote path herdr opens as the new Workspace.")
-                        }
-
-                        Section {
-                            TextField("Optional", text: $store.newWorkspaceLabel)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                        } header: {
-                            Text("Workspace Label")
-                        } footer: {
-                            Text("Empty uses herdr's default label.")
-                        }
+                    Section("Workspace") {
+                        StartWorkspacePicker(
+                            workspaces: store.workspaces,
+                            selectedWorkspaceID: store.launchTarget == .existingWorkspace
+                                ? store.selectedWorkspaceID : nil,
+                            newDirectory: store.launchTarget == .newWorkspace
+                                ? store.newWorkspaceDirectory : nil,
+                            canBrowse: store.selectedHostID != nil,
+                            onSelect: store.selectExistingWorkspace,
+                            onNewWorkspace: openDirectoryBrowser)
                     }
                 }
 
@@ -286,5 +236,100 @@ struct StartAgentView: View {
             }
             .interactiveDismissDisabled(!store.canDismiss)
         }
+    }
+
+    private func openDirectoryBrowser() {
+        guard let hostID = store.selectedHostID else { return }
+        directoryBrowser = RemoteDirectoryBrowser(
+            resolveHome: { try await console.remoteHomeDirectory(on: hostID) },
+            list: { try await console.listRemoteDirectories(at: $0, on: hostID) })
+    }
+}
+
+/// Keeps existing Workspaces in a bounded list with the creation action below
+/// the scroll area. A directory pick remains a draft until the user taps Start.
+struct StartWorkspacePicker: View {
+    let workspaces: [ConsoleWorkspace]
+    let selectedWorkspaceID: String?
+    let newDirectory: String?
+    let canBrowse: Bool
+    let onSelect: (String) -> Void
+    let onNewWorkspace: () -> Void
+    @ScaledMetric(relativeTo: .body) private var rowHeight = 60.0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if workspaces.isEmpty {
+                Text(canBrowse ? "No Workspaces yet" : "Select a Host first")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(workspaces) { workspace in
+                            Button {
+                                onSelect(workspace.id)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(workspace.label)
+                                        .lineLimit(2)
+                                        .multilineTextAlignment(.leading)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                        .opacity(selectedWorkspaceID == workspace.id ? 1 : 0)
+                                        .accessibilityHidden(true)
+                                }
+                                .padding(.horizontal, 16)
+                                .frame(height: rowHeight)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(
+                                selectedWorkspaceID == workspace.id ? .isSelected : [])
+                            .accessibilityIdentifier("start-workspace-\(workspace.id)")
+                        }
+                    }
+                }
+                // A partial next row and the indicator both signal more items.
+                .frame(height: min(Double(workspaces.count), 3.5) * rowHeight)
+                .scrollIndicators(.visible)
+                .accessibilityIdentifier("start-workspace-list")
+            }
+
+            if let newDirectory {
+                Divider().padding(.horizontal, 16)
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("New Workspace")
+                        Text(newDirectory)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.tint)
+                        .accessibilityHidden(true)
+                }
+                .padding(16)
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isSelected)
+                .accessibilityIdentifier("new-workspace-directory")
+            }
+
+            Divider().padding(.horizontal, 16)
+            Button(action: onNewWorkspace) {
+                Label("New Workspace", systemImage: "folder.badge.plus")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .disabled(!canBrowse)
+            .accessibilityIdentifier("new-workspace")
+        }
+        .listRowInsets(EdgeInsets())
     }
 }

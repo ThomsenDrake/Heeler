@@ -58,6 +58,36 @@ struct RemoteDirectoryBrowserTests {
         #expect(await condition(), comment)
     }
 
+    @Test func manyWorkspacesScrollWithoutGrowingTheWholePicker() async throws {
+        let picker = StartWorkspacePicker(
+            workspaces: (0..<40).map {
+                ConsoleWorkspace(id: "w\($0)", label: "Workspace \($0) with a long descriptive name")
+            },
+            selectedWorkspaceID: "w0", newDirectory: nil, canBrowse: true,
+            onSelect: { _ in }, onNewWorkspace: {})
+        let controller = UIHostingController(rootView: picker)
+        let window = try await makeTestWindow(
+            frame: CGRect(x: 0, y: 0, width: 402, height: 874),
+            rootViewController: controller)
+        defer { window.isHidden = true }
+        controller.view.layoutIfNeeded()
+
+        func scrollViews(in view: UIView) -> [UIScrollView] {
+            (view as? UIScrollView).map { [$0] } ?? view.subviews.flatMap { scrollViews(in: $0) }
+        }
+        try await waitUntil("workspace list has scrollable content") {
+            controller.view.layoutIfNeeded()
+            return scrollViews(in: controller.view).contains {
+                $0.contentSize.height > $0.bounds.height && $0.bounds.height > 0
+            }
+        }
+        let scroll = try #require(scrollViews(in: controller.view).first)
+        #expect(scroll.bounds.height < 400)
+        #expect(controller.sizeThatFits(in: CGSize(width: 402, height: 2000)).height < 400)
+        scroll.setContentOffset(CGPoint(x: 0, y: 200), animated: false)
+        #expect(scroll.contentOffset.y > 0)
+    }
+
     @Test func startLoadsHomeThenEnterAndBackNavigate() async throws {
         let fake = FakeLister()
         fake.listings = [
@@ -193,6 +223,7 @@ struct RemoteDirectoryBrowserTests {
         store.applyBrowsedDirectory("/home/you/src/app")
 
         #expect(store.newWorkspaceDirectory == "/home/you/src/app")
+        #expect(store.launchTarget == .newWorkspace)
         #expect(starts.count == 0)
     }
 }

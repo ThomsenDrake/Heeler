@@ -53,7 +53,7 @@ test-app: generate ## Run the app test suite (SIM_DESTINATION, TEST_FLAGS)
 test: test-app ## Run the app and HeelerSSH unit test suites on a simulator
 	scripts/run-heelerssh-package-tests.sh '$(SIM_DESTINATION)'
 
-# Requires a fresh New Agent > New Workspace form on the installed candidate.
+# Requires a fresh New Agent form on the installed candidate.
 .PHONY: test-directory-browser-ui
 test-directory-browser-ui: ## Check first Browse presentation (SIMULATOR_UDID, requires idb)
 	@test -n "$(SIMULATOR_UDID)" || { echo "SIMULATOR_UDID is required"; exit 1; }

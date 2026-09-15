@@ -165,10 +165,18 @@ final class StartAgentStore {
     /// Remote directory for a New Workspace launch. Required once that
     /// target is selected; trimmed at submit.
     var newWorkspaceDirectory: String = ""
-    /// Records a remote-directory browser pick (#280) into the Directory
-    /// field. It never starts anything; Start stays a separate tap.
+    /// Selecting a directory switches the draft destination without starting
+    /// an Agent. Dismissing the browser never changes the current selection.
     func applyBrowsedDirectory(_ path: String) {
+        guard offersNewWorkspace, RemoteShellPath.isQuotableAbsolute(path) else { return }
         newWorkspaceDirectory = path
+        launchTarget = .newWorkspace
+    }
+
+    func selectExistingWorkspace(_ id: String) {
+        guard origin == nil, workspaces.contains(where: { $0.id == id }) else { return }
+        selectedWorkspaceID = id
+        launchTarget = .existingWorkspace
     }
     /// Optional label for a New Workspace launch. Empty or whitespace
     /// becomes nil so herdr applies its default.

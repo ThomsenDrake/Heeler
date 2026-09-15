@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Check the real New Agent sheet's first Browse presentation using idb.
+"""Check the real New Agent sheet's first directory browser presentation using idb.
 
 Install the candidate with `make sim-id`, then open a fresh New Agent form,
-select a Host and New Workspace, and keep Browse visible without opening it.
+select a Host, and keep the New Workspace button visible without opening it.
 Run `make test-directory-browser-ui SIMULATOR_UDID=<uuid>`.
 
 The precondition matters: reopening an already-used form can hide a stale
@@ -49,21 +49,19 @@ def main() -> int:
     elements = snapshot()
     if not any(item.get("AXUniqueId") == "New Agent" for item in elements):
         raise RuntimeError("Open a fresh New Agent form before running the probe")
-    if not any(item.get("AXLabel") == "Launch, New Workspace" for item in elements):
-        raise RuntimeError("Select New Workspace and keep Browse visible")
 
     # Let Agent discovery finish before opening Browse. Otherwise its unrelated
     # view update can refresh the stale capture and mask the first-open defect.
     deadline = time.monotonic() + 15
     while any(item.get("AXLabel") == "Detecting installed Agents…" for item in elements):
         if time.monotonic() >= deadline:
-            raise RuntimeError("Wait for Agent discovery to finish before testing Browse")
+            raise RuntimeError("Wait for Agent discovery to finish before testing New Workspace")
         time.sleep(0.2)
         elements = snapshot()
 
-    matches = [item for item in elements if item.get("AXLabel") == "Browse…"]
+    matches = [item for item in elements if item.get("AXUniqueId") == "new-workspace"]
     if len(matches) != 1 or not matches[0].get("enabled"):
-        raise RuntimeError("Exactly one enabled Browse control must be visible")
+        raise RuntimeError("Exactly one enabled New Workspace control must be visible")
     frame = matches[0]["frame"]
     ui("tap", str(round(frame["x"] + frame["width"] / 2)),
        str(round(frame["y"] + frame["height"] / 2)))

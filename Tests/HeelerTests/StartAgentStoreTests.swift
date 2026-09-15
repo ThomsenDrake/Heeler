@@ -94,6 +94,58 @@ struct StartAgentStoreTests {
         #expect(await condition(), comment)
     }
 
+    @Test func browsingSelectsANewWorkspaceAndClearsWorktreeDraft() async {
+        let host = Host.fixture()
+        let recorder = StartRecorder()
+        let store = makeStore(
+            hosts: [host],
+            workspaces: { _ in [ConsoleWorkspace(id: "w1", label: "Existing")] },
+            recorder: recorder)
+        await store.discoverAgents()
+        store.startsInNewWorktree = true
+        store.worktreeBranch = "feature"
+        store.applyBrowsedDirectory("/home/you/new-project")
+
+        #expect(store.launchTarget == .newWorkspace)
+        #expect(!store.startsInNewWorktree)
+        #expect(store.worktreeBranch.isEmpty)
+        #expect(recorder.destinations.isEmpty)
+        await store.submit()
+        #expect(recorder.destinations == [
+            .newWorkspace(NewWorkspaceSpec(directory: "/home/you/new-project", label: nil))
+        ])
+    }
+
+    @Test func selectingAnExistingWorkspaceReplacesTheBrowsedDestination() async {
+        let host = Host.fixture()
+        let recorder = StartRecorder()
+        let store = makeStore(
+            hosts: [host],
+            workspaces: { _ in [ConsoleWorkspace(id: "w1", label: "Existing")] },
+            recorder: recorder)
+        await store.discoverAgents()
+        store.applyBrowsedDirectory("/home/you/new-project")
+        store.selectExistingWorkspace("w1")
+        #expect(store.launchTarget == .existingWorkspace)
+        #expect(store.selectedWorkspaceID == "w1")
+        await store.submit()
+        #expect(recorder.destinations == [.existingWorkspace])
+        #expect(recorder.params.first?.workspaceID == "w1")
+    }
+
+    @Test func invalidDirectoryAndStaleWorkspaceDoNotReplaceTheSelection() {
+        let store = makeStore(
+            hosts: [Host.fixture()],
+            workspaces: { _ in [ConsoleWorkspace(id: "w1", label: "Existing")] },
+            recorder: StartRecorder())
+        store.applyBrowsedDirectory("relative/path")
+        #expect(store.launchTarget == .existingWorkspace)
+        #expect(store.newWorkspaceDirectory.isEmpty)
+        store.applyBrowsedDirectory("/home/you/new-project")
+        store.selectExistingWorkspace("gone")
+        #expect(store.launchTarget == .newWorkspace)
+    }
+
     @Test func argumentParserSupportsQuotesEscapesAndEmptyArguments() throws {
         #expect(
             StartAgentStore.parseArguments(

@@ -9,14 +9,12 @@ Entries reference the issue that motivated them.
 
 ### Added
 
-- The New Workspace Directory field has a Browse control that opens a
-  remote-directory browser sheet. It starts at the Host's home directory,
-  lists one level of subdirectories at a time with a filter, and writes the
-  picked directory into the field without starting anything. (#280)
+- Pick an existing Workspace from a scrollable list in New Agent, or choose
+  New Workspace to browse a remote directory. (PR #305)
 
 ### Fixed
 
-- Show the directory browser on the first Browse tap in New Workspace. (PR #305)
+- Show the directory browser on the first New Workspace tap. (PR #305)
 
 ## [0.1.8] - 2026-09-13
 
