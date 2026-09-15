@@ -9,7 +9,7 @@ Entries reference the issue that motivated them.
 
 ### Added
 
-- Pick an existing Workspace from a scrollable list in New Agent, or choose
+- Pick an existing Workspace from a dropdown in New Agent, or choose
   New Workspace to browse a remote directory. (PR #305)
 
 ### Fixed

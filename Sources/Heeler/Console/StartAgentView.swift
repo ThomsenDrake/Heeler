@@ -246,8 +246,8 @@ struct StartAgentView: View {
     }
 }
 
-/// Keeps existing Workspaces in a bounded list with the creation action below
-/// the scroll area. A directory pick remains a draft until the user taps Start.
+/// Selects an existing Workspace through the native menu, with creation below.
+/// A directory pick remains a draft until the user taps Start.
 struct StartWorkspacePicker: View {
     let workspaces: [ConsoleWorkspace]
     let selectedWorkspaceID: String?
@@ -255,51 +255,26 @@ struct StartWorkspacePicker: View {
     let canBrowse: Bool
     let onSelect: (String) -> Void
     let onNewWorkspace: () -> Void
-    @ScaledMetric(relativeTo: .body) private var rowHeight = 60.0
 
     var body: some View {
-        VStack(spacing: 0) {
-            if workspaces.isEmpty {
-                Text(canBrowse ? "No Workspaces yet" : "Select a Host first")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(workspaces) { workspace in
-                            Button {
-                                onSelect(workspace.id)
-                            } label: {
-                                HStack(spacing: 12) {
-                                    Text(workspace.label)
-                                        .lineLimit(2)
-                                        .multilineTextAlignment(.leading)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                        .opacity(selectedWorkspaceID == workspace.id ? 1 : 0)
-                                        .accessibilityHidden(true)
-                                }
-                                .padding(.horizontal, 16)
-                                .frame(height: rowHeight)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityAddTraits(
-                                selectedWorkspaceID == workspace.id ? .isSelected : [])
-                            .accessibilityIdentifier("start-workspace-\(workspace.id)")
-                        }
-                    }
+        Group {
+            Picker("Workspace", selection: Binding<String?>(
+                get: { selectedWorkspaceID },
+                set: { if let id = $0 { onSelect(id) } }
+            )) {
+                if selectedWorkspaceID == nil {
+                    Text(workspaces.isEmpty ? "None reported" : "Select a Workspace")
+                        .tag(String?.none)
                 }
-                // A partial next row and the indicator both signal more items.
-                .frame(height: min(Double(workspaces.count), 3.5) * rowHeight)
-                .scrollIndicators(.visible)
-                .accessibilityIdentifier("start-workspace-list")
+                ForEach(workspaces) { workspace in
+                    Text(workspace.label).tag(String?.some(workspace.id))
+                }
             }
+            .pickerStyle(.menu)
+            .disabled(!canBrowse || workspaces.isEmpty)
+            .accessibilityIdentifier("start-workspace-picker")
 
             if let newDirectory {
-                Divider().padding(.horizontal, 16)
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("New Workspace")
@@ -313,23 +288,18 @@ struct StartWorkspacePicker: View {
                         .foregroundStyle(.tint)
                         .accessibilityHidden(true)
                 }
-                .padding(16)
                 .accessibilityElement(children: .combine)
                 .accessibilityAddTraits(.isSelected)
                 .accessibilityIdentifier("new-workspace-directory")
             }
 
-            Divider().padding(.horizontal, 16)
             Button(action: onNewWorkspace) {
                 Label("New Workspace", systemImage: "folder.badge.plus")
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
             .disabled(!canBrowse)
             .accessibilityIdentifier("new-workspace")
         }
-        .listRowInsets(EdgeInsets())
     }
 }
