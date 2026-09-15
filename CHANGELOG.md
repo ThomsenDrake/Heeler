@@ -7,6 +7,21 @@ Entries reference the issue that motivated them.
 
 ## [Unreleased]
 
+### Added
+
+- Choose an existing Workspace or New Workspace from the same dropdown in
+  New Agent. New Workspace opens a remote directory browser. The latest directory stays at the
+  bottom of the dropdown, with its name and full path shown when selected. (PR #305)
+
+### Changed
+
+- Make the remote directory browser more compact, with full-row folder navigation,
+  native filtering, empty states, and retry for failed navigation. (PR #305)
+
+### Fixed
+
+- Show the directory browser on the first New Workspace tap. (PR #305)
+
 ## [0.1.8] - 2026-09-13
 
 ### Added
@@ -100,7 +115,6 @@ Entries reference the issue that motivated them.
   and light haptic feedback when tapped. Agent controls put Backspace at the
   top right and Shift+Tab at the bottom left. The Direct Input shortcut row
   no longer duplicates the Terminal keyboard's Ctrl/Alt buttons. (PR #302)
-
 ### Fixed
 
 - Switching Agents keeps the Terminal tools keyboard selected instead of opening
