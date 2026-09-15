@@ -14,6 +14,10 @@ Entries reference the issue that motivated them.
   lists one level of subdirectories at a time with a filter, and writes the
   picked directory into the field without starting anything. (#280)
 
+### Fixed
+
+- Show the directory browser on the first Browse tap in New Workspace. (PR #305)
+
 ## [0.1.8] - 2026-09-13
 
 ### Added

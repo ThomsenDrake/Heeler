@@ -9,7 +9,7 @@ import Observation
 /// path on screen with an error instead of clearing anything.
 @MainActor
 @Observable
-final class RemoteDirectoryBrowser {
+final class RemoteDirectoryBrowser: Identifiable {
     typealias ResolveHome = () async throws -> String
     typealias ListDirectories = (String) async throws -> RemoteDirectoryListing
 

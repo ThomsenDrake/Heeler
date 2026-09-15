@@ -9,7 +9,6 @@ import SwiftUI
 struct StartAgentView: View {
     @State private var store: StartAgentStore
     @State private var directoryBrowser: RemoteDirectoryBrowser?
-    @State private var isBrowsingDirectories = false
     private let onStarted: (ConsoleAgent.ID) -> Void
     private let console: ConsoleStore
     @Environment(\.dismiss) private var dismiss
@@ -117,7 +116,6 @@ struct StartAgentView: View {
                                 directoryBrowser = RemoteDirectoryBrowser(
                                     resolveHome: { try await console.remoteHomeDirectory(on: hostID) },
                                     list: { try await console.listRemoteDirectories(at: $0, on: hostID) })
-                                isBrowsingDirectories = true
                             }
                             .disabled(store.selectedHostID == nil)
                         } header: {
@@ -278,12 +276,12 @@ struct StartAgentView: View {
             .task(id: store.selectedHostID) {
                 await store.discoverAgents()
             }
-            .sheet(isPresented: $isBrowsingDirectories) {
-                if let directoryBrowser {
-                    RemoteDirectoryBrowserView(browser: directoryBrowser) { path in
-                        store.applyBrowsedDirectory(path)
-                        isBrowsingDirectories = false
-                    }
+            // The presented item also supplies the content, so the first
+            // presentation cannot capture an empty browser from an older view.
+            .sheet(item: $directoryBrowser) { browser in
+                RemoteDirectoryBrowserView(browser: browser) { path in
+                    store.applyBrowsedDirectory(path)
+                    directoryBrowser = nil
                 }
             }
             .interactiveDismissDisabled(!store.canDismiss)
