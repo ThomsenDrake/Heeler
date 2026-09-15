@@ -170,6 +170,14 @@ final class StartAgentStore {
     func applyBrowsedDirectory(_ path: String) {
         guard offersNewWorkspace, RemoteShellPath.isQuotableAbsolute(path) else { return }
         newWorkspaceDirectory = path
+        selectNewWorkspace()
+    }
+
+    /// Reuses the latest directory after switching to an existing Workspace.
+    func selectNewWorkspace() {
+        guard offersNewWorkspace, RemoteShellPath.isQuotableAbsolute(newWorkspaceDirectory) else {
+            return
+        }
         launchTarget = .newWorkspace
     }
 

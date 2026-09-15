@@ -133,6 +133,36 @@ struct StartAgentStoreTests {
         #expect(recorder.params.first?.workspaceID == "w1")
     }
 
+    @Test func latestDirectoryRemainsSelectableAfterChoosingAnExistingWorkspace() async {
+        let recorder = StartRecorder()
+        let store = makeStore(
+            hosts: [Host.fixture()],
+            workspaces: { _ in [ConsoleWorkspace(id: "w1", label: "Existing")] },
+            recorder: recorder)
+        await store.discoverAgents()
+        store.applyBrowsedDirectory("/home/you/old-project")
+        store.applyBrowsedDirectory("/home/you/latest-project")
+        store.selectExistingWorkspace("w1")
+        #expect(store.newWorkspaceDirectory == "/home/you/latest-project")
+        store.selectNewWorkspace()
+        #expect(store.launchTarget == .newWorkspace)
+        #expect(recorder.destinations.isEmpty)
+        await store.submit()
+        #expect(recorder.destinations == [
+            .newWorkspace(NewWorkspaceSpec(directory: "/home/you/latest-project", label: nil))
+        ])
+    }
+
+    @Test func switchingHostsDropsTheLatestDirectoryOption() {
+        let hosts = [Host.fixture(), Host.fixture()]
+        let store = makeStore(hosts: hosts, recorder: StartRecorder())
+        store.applyBrowsedDirectory("/home/you/project")
+        store.selectedHostID = hosts[1].id
+        #expect(store.newWorkspaceDirectory.isEmpty)
+        store.selectNewWorkspace()
+        #expect(store.launchTarget == .existingWorkspace)
+    }
+
     @Test func invalidDirectoryAndStaleWorkspaceDoNotReplaceTheSelection() {
         let store = makeStore(
             hosts: [Host.fixture()],

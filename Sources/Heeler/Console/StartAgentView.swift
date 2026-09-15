@@ -78,10 +78,12 @@ struct StartAgentView: View {
                             workspaces: store.workspaces,
                             selectedWorkspaceID: store.launchTarget == .existingWorkspace
                                 ? store.selectedWorkspaceID : nil,
-                            newDirectory: store.launchTarget == .newWorkspace
-                                ? store.newWorkspaceDirectory : nil,
+                            newDirectory: store.newWorkspaceDirectory.isEmpty
+                                ? nil : store.newWorkspaceDirectory,
+                            isNewWorkspaceSelected: store.launchTarget == .newWorkspace,
                             canBrowse: store.selectedHostID != nil,
                             onSelect: store.selectExistingWorkspace,
+                            onSelectNewWorkspace: store.selectNewWorkspace,
                             onNewWorkspace: openDirectoryBrowser)
                     }
                 }
@@ -246,52 +248,86 @@ struct StartAgentView: View {
     }
 }
 
-/// Selects an existing Workspace through the native menu, with creation below.
-/// A directory pick remains a draft until the user taps Start.
+/// Keeps the latest browsed directory as the final menu option, even when an
+/// existing Workspace is selected. Browsing only updates the launch draft.
 struct StartWorkspacePicker: View {
+    private enum Selection: Hashable {
+        case existing(String)
+        case newWorkspace
+    }
+
     let workspaces: [ConsoleWorkspace]
     let selectedWorkspaceID: String?
     let newDirectory: String?
+    let isNewWorkspaceSelected: Bool
     let canBrowse: Bool
     let onSelect: (String) -> Void
+    let onSelectNewWorkspace: () -> Void
     let onNewWorkspace: () -> Void
+
+    private var directoryName: String {
+        newDirectory?.split(separator: "/").last.map(String.init) ?? "/"
+    }
+
+    private var selectedTitle: String {
+        if isNewWorkspaceSelected { return directoryName }
+        return workspaces.first { $0.id == selectedWorkspaceID }?.label ?? "None reported"
+    }
+
+    private var selection: Binding<Selection?> {
+        Binding(
+            get: {
+                isNewWorkspaceSelected ? .newWorkspace : selectedWorkspaceID.map(Selection.existing)
+            },
+            set: { value in
+                switch value {
+                case .existing(let id): onSelect(id)
+                case .newWorkspace: onSelectNewWorkspace()
+                case nil: break
+                }
+            })
+    }
 
     var body: some View {
         Group {
-            Picker("Workspace", selection: Binding<String?>(
-                get: { selectedWorkspaceID },
-                set: { if let id = $0 { onSelect(id) } }
-            )) {
-                if selectedWorkspaceID == nil {
-                    Text(workspaces.isEmpty ? "None reported" : "Select a Workspace")
-                        .tag(String?.none)
-                }
-                ForEach(workspaces) { workspace in
-                    Text(workspace.label).tag(String?.some(workspace.id))
-                }
-            }
-            .pickerStyle(.menu)
-            .disabled(!canBrowse || workspaces.isEmpty)
-            .accessibilityIdentifier("start-workspace-picker")
-
-            if let newDirectory {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("New Workspace")
-                        Text(newDirectory)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+            Menu {
+                Picker("Workspace", selection: selection) {
+                    if selectedWorkspaceID == nil && !isNewWorkspaceSelected {
+                        Text("None reported").tag(Selection?.none)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Image(systemName: "checkmark")
-                        .foregroundStyle(.tint)
-                        .accessibilityHidden(true)
+                    ForEach(workspaces) { workspace in
+                        Text(workspace.label).tag(Selection?.some(.existing(workspace.id)))
+                    }
+                    if newDirectory != nil {
+                        Text(directoryName).tag(Selection?.some(.newWorkspace))
+                    }
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityAddTraits(.isSelected)
-                .accessibilityIdentifier("new-workspace-directory")
+            } label: {
+                VStack(alignment: .trailing, spacing: 4) {
+                    HStack(spacing: 12) {
+                        Text("Workspace")
+                            .foregroundStyle(Color.primary)
+                        Spacer(minLength: 12)
+                        Text(selectedTitle)
+                            .multilineTextAlignment(.trailing)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .accessibilityHidden(true)
+                    }
+                    if isNewWorkspaceSelected, let newDirectory {
+                        Text(newDirectory)
+                            .font(.caption)
+                            .foregroundStyle(Color.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .contentShape(Rectangle())
             }
+            .menuOrder(.fixed)
+            .disabled(!canBrowse || (workspaces.isEmpty && newDirectory == nil))
+            .accessibilityIdentifier("start-workspace-picker")
 
             Button(action: onNewWorkspace) {
                 Label("New Workspace", systemImage: "folder.badge.plus")

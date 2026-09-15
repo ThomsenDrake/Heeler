@@ -10,7 +10,8 @@ Entries reference the issue that motivated them.
 ### Added
 
 - Pick an existing Workspace from a dropdown in New Agent, or choose
-  New Workspace to browse a remote directory. (PR #305)
+  New Workspace to browse a remote directory. The latest directory stays at the
+  bottom of the dropdown, with its name and full path shown when selected. (PR #305)
 
 ### Fixed
 
