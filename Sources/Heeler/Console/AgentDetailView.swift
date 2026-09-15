@@ -16,6 +16,9 @@ struct AgentDetailView: View {
     private let isVisible: () -> Bool
     private let onSwitch: (ConsoleAgent.ID) -> Void
     private let onClosed: () -> Void
+    @State private var focus = AgentFocusCoordinator()
+    @State private var hasAppeared = false
+    @Environment(\.scenePhase) private var scenePhase
     @State private var composer: AgentComposerStore
     @State private var attach: AgentAttachStore
     @State private var openTerminal: AgentOpenTerminalStore
@@ -116,6 +119,30 @@ struct AgentDetailView: View {
         }
     }
 
+    private var focusViewingState: AgentFocusCoordinator.ViewingState {
+        let current = console.agents.first { $0.id == agent.id }
+        return .init(
+            agentID: agent.id,
+            terminalID: current?.agent.terminalID ?? agent.agent.terminalID,
+            transportGeneration: console.hostConnectionGenerations[agent.hostID],
+            status: current?.agent.status,
+            isHostReady: console.hostStatuses[agent.hostID] == .connected
+                && !console.hostsAwaitingSnapshot.contains(agent.hostID),
+            isSceneActive: scenePhase == .active,
+            isOnStage: hasAppeared && isOnStage(),
+            showsShellTerminal: openTerminal.shell != nil || openTerminal.isOpening)
+    }
+
+    private func updateFocus() {
+        let state = focusViewingState
+        focus.update(state) { id in
+            // A queued task can begin after selection or Shell ownership moved,
+            // before SwiftUI has delivered the next onChange callback.
+            guard focusViewingState == state else { throw CancellationError() }
+            try await console.focusAgent(id.paneID, on: id.hostID)
+        }
+    }
+
     var body: some View {
         Group {
             if let shell = openTerminal.shell {
@@ -158,6 +185,17 @@ struct AgentDetailView: View {
                     attachStore: attach)
                 .id(openTerminal.destination)
             }
+        }
+        .onAppear {
+            hasAppeared = true
+            updateFocus()
+        }
+        .onChange(of: focusViewingState) {
+            updateFocus()
+        }
+        .onDisappear {
+            hasAppeared = false
+            focus.leave()
         }
         .onChange(of: console.hostConnectionGenerations[agent.hostID]) { _, generation in
             openTerminal.transportGenerationDidChange(generation)

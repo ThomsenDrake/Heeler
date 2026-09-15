@@ -445,6 +445,10 @@ final class ConsoleStore {
         try await projection(for: hostID).removeWorktree(request)
     }
 
+    func focusAgent(_ paneID: String, on hostID: Host.ID) async throws {
+        try await projection(for: hostID).focusAgent(paneID)
+    }
+
     func renameAgent(
         _ paneID: String, name: String?, on hostID: Host.ID
     ) async throws {

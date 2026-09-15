@@ -7,6 +7,11 @@ Entries reference the issue that motivated them.
 
 ## [Unreleased]
 
+### Fixed
+
+- Viewing a Done Agent marks it seen on its Host and refreshes Console and
+  Live Activity status, including other Agents in the same Tab. (#314)
+
 ## [0.1.8] - 2026-09-13
 
 ### Added
