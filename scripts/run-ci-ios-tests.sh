@@ -1745,7 +1745,7 @@ if [[ "$password_fixture_available" == "1" ]]; then
 fi
 run_suite HeelerSSHDirectStreamLocalE2ETests 9 1 0 \
     HeelerSSHDirectStreamLocalE2ETests
-run_suite SharedFixtureE2ETests 94 6 0 \
+run_suite SharedFixtureE2ETests 95 6 0 \
     HeelerSSHPTYE2ETests \
     HeelerSSHJumpHostGateE2ETests \
     HeelerSSHTransportBehaviorE2ETests \
@@ -1801,6 +1801,8 @@ assert_behavior "RPC does not stall Attach on a Jump Host" \
     '"Jump Host RPC does not stall Attach"'
 # These writes can return healthy response envelopes even when a serializer
 # silently drops a field. Keep every distinct wire contract named (#165).
+assert_behavior "agent focus target" HeelerSSHTransportBehaviorE2ETests \
+    '"agent focus sends the exact opaque target through the RPC channel"'
 assert_behavior "agent rename params" HeelerSSHTransportBehaviorE2ETests \
     '"agent rename sends its custom name and target exactly"'
 assert_behavior "agent rename clear omission" HeelerSSHTransportBehaviorE2ETests \

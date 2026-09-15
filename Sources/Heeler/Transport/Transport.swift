@@ -111,6 +111,11 @@ protocol Transport: Sendable {
         onDispatched: @escaping @Sendable (WorktreeRemovalRequest) async -> Void
     ) async throws -> WorktreeRemovedResponse
 
+    /// Marks the viewed Agent seen through `agent.focus`. herdr 0.9.0 also
+    /// focuses its Tab and marks every Pane in that Tab seen. Callers must
+    /// refresh the entire Host rather than synthesize a selected-row status.
+    func focusAgent(_ target: AgentTarget) async throws
+
     /// Renames an Agent (`agent.rename`): the Console management action
     /// (#98). A nil name clears the custom name back to the detected kind
     /// (verified live against herdr 0.7.5: omitting the key clears). The

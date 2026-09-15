@@ -468,6 +468,29 @@ final class HostConsoleProjection {
         }
     }
 
+    /// Focus can mark sibling Panes seen too; only a full Host snapshot can
+    /// supply the resulting authoritative statuses, including Live Activity.
+    func focusAgent(_ paneID: String) async throws {
+        try Task.checkCancellation()
+        guard !hasEnded, status == .connected, !isAwaitingSnapshot else {
+            throw TransportError.sshUnreachable(detail: "The Host is not ready.")
+        }
+        guard let agent = agentsByPane[paneID] else {
+            throw TransportError.apiRejected(
+                code: "agent_not_found", message: "The Agent is no longer listed.")
+        }
+        guard agent.agent.status == .done else { throw CancellationError() }
+        let epoch = snapshotEpoch
+        try await session.withTransport { transport in
+            try Task.checkCancellation()
+            try await transport.focusAgent(AgentTarget(target: paneID))
+        }
+        // Cancellation cannot undo a delivered focus. A successful reply still
+        // refreshes this connection, even if its detail has since left.
+        guard !hasEnded, snapshotEpoch == epoch else { return }
+        scheduleResync()
+    }
+
     /// Renames an Agent (#98); a nil name clears back to the detected kind.
     /// The new name lands via the post-RPC resync, not an event delta:
     /// `pane.updated` does not carry the agent name and fires on every
